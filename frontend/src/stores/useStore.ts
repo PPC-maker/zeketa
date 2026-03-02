@@ -97,11 +97,11 @@ export const useStore = create<StoreState>()(
       },
 
       // Currency
-      currency: 'USD',
+      currency: 'ILS',
       setCurrency: (currency) => set({ currency }),
 
       // Language
-      locale: 'en',
+      locale: 'he',
       setLocale: (locale) => set({ locale }),
 
       // UI State

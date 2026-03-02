@@ -8,6 +8,7 @@ import Footer from '@/components/layout/Footer';
 import CartDrawer from '@/components/layout/CartDrawer';
 import SearchModal from '@/components/layout/SearchModal';
 import PageLoader from '@/components/layout/PageLoader';
+import AccessibilityWidget from '@/components/ui/AccessibilityWidget';
 import { useStore } from '@/stores/useStore';
 
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
@@ -73,6 +74,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
         <Footer />
         <CartDrawer />
         <SearchModal />
+        <AccessibilityWidget />
       </div>
 
       {/* Loading indicator for route changes */}
