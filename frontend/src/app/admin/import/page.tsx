@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Upload, FileSpreadsheet, Check, X, AlertCircle, Download, Loader2 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useStore } from '@/stores/useStore';
+import { getApiUrl } from '@/lib/config';
 
 interface ImportResult {
   success: number;
@@ -21,7 +22,8 @@ export default function ImportPage() {
   const [progress, setProgress] = useState(0);
   const [result, setResult] = useState<ImportResult | null>(null);
   const [previewData, setPreviewData] = useState<any[]>([]);
-  const [limitPerCategory, setLimitPerCategory] = useState(5);
+  const [limitPerCategory, setLimitPerCategory] = useState(0);
+  const [replaceAll, setReplaceAll] = useState(true);
   const isRTL = locale === 'he';
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -88,11 +90,23 @@ export default function ImportPage() {
     }, 500);
 
     try {
+      // If replaceAll is true, first delete all existing products
+      if (replaceAll) {
+        setProgress(10);
+        await fetch(`${getApiUrl()}/api/import/products`, {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+        });
+        setProgress(20);
+      }
+
       const formData = new FormData();
       formData.append('file', file);
       formData.append('limitPerCategory', limitPerCategory.toString());
 
-      const response = await fetch('/api/import/csv', {
+      const response = await fetch(`${getApiUrl()}/api/import/csv`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -232,20 +246,48 @@ export default function ImportPage() {
             </div>
 
             {/* Settings */}
-            <div className="p-6 border-b border-gray-100 bg-gray-50">
+            <div className="p-6 border-b border-gray-100 bg-gray-50 space-y-4">
+              {/* Replace All Toggle */}
+              <div className="flex items-center justify-between p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div>
+                  <span className="text-sm font-medium text-yellow-800">
+                    {isRTL ? 'החלף את כל המוצרים' : 'Replace all products'}
+                  </span>
+                  <p className="text-xs text-yellow-600 mt-1">
+                    {isRTL
+                      ? 'ימחק את כל המוצרים הקיימים לפני הייבוא'
+                      : 'Will delete all existing products before import'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setReplaceAll(!replaceAll)}
+                  className={`relative w-14 h-7 rounded-full transition-colors ${
+                    replaceAll ? 'bg-yellow-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1 w-5 h-5 bg-white rounded-full transition-transform ${
+                      replaceAll ? 'right-1' : 'left-1'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Limit per category */}
               <label className="block">
                 <span className="text-sm font-medium text-gray-700">
-                  {isRTL ? 'מספר מוצרים לקטגוריה' : 'Products per category'}
+                  {isRTL ? 'מגבלת מוצרים לקטגוריה' : 'Products per category limit'}
                 </span>
                 <select
                   value={limitPerCategory}
                   onChange={(e) => setLimitPerCategory(Number(e.target.value))}
                   className="mt-2 block w-full px-4 py-3 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 >
+                  <option value={0}>{isRTL ? 'ללא מגבלה (הכל)' : 'No limit (All)'}</option>
                   <option value={5}>5 {isRTL ? 'מוצרים' : 'products'}</option>
                   <option value={10}>10 {isRTL ? 'מוצרים' : 'products'}</option>
                   <option value={20}>20 {isRTL ? 'מוצרים' : 'products'}</option>
-                  <option value={0}>{isRTL ? 'הכל' : 'All'}</option>
+                  <option value={50}>50 {isRTL ? 'מוצרים' : 'products'}</option>
                 </select>
               </label>
             </div>

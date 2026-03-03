@@ -157,6 +157,68 @@ export class ProductsService {
     });
   }
 
+  async createCategory(data: {
+    nameHe: string;
+    nameEn: string;
+    slug: string;
+    parentId?: string | null;
+    image?: string;
+    sortOrder?: number;
+  }) {
+    return this.prisma.category.create({
+      data: {
+        nameHe: data.nameHe,
+        nameEn: data.nameEn,
+        slug: data.slug,
+        parentId: data.parentId || null,
+        image: data.image,
+        sortOrder: data.sortOrder || 0,
+      },
+    });
+  }
+
+  async updateCategory(
+    id: string,
+    data: {
+      nameHe?: string;
+      nameEn?: string;
+      slug?: string;
+      parentId?: string | null;
+      image?: string;
+      sortOrder?: number;
+      isActive?: boolean;
+    },
+  ) {
+    return this.prisma.category.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async deleteCategory(id: string) {
+    // First check if category has products
+    const productsCount = await this.prisma.product.count({
+      where: { categoryId: id },
+    });
+
+    if (productsCount > 0) {
+      throw new Error(`Cannot delete category with ${productsCount} products`);
+    }
+
+    // Check if category has children
+    const childrenCount = await this.prisma.category.count({
+      where: { parentId: id },
+    });
+
+    if (childrenCount > 0) {
+      throw new Error(`Cannot delete category with ${childrenCount} child categories`);
+    }
+
+    return this.prisma.category.delete({
+      where: { id },
+    });
+  }
+
   async getProductsByGender(gender: 'men' | 'women', limit = 50) {
     // Find products that have the gender tag
     const products = await this.prisma.product.findMany({

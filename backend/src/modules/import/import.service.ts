@@ -9,13 +9,16 @@ interface CsvRow {
   'שם': string;
   'פורסם': string;
   'תיאור': string;
+  'תיאור קצר': string;
   'מחיר מבצע': string;
   'מחיר רגיל': string;
   'קטגוריות': string;
   'תגיות': string;
   'תמונות': string;
   'מלאי': string;
-  'מידה': string;
+  'במלאי?': string;
+  'שיוך 1 שמות': string;
+  'שיוך 1 ערכים': string;
 }
 
 export interface ImportResult {
@@ -72,8 +75,9 @@ export class ImportService {
       // Second pass: Import products
       for (const row of records) {
         try {
-          // Skip if not a product/variation
-          if (row['סוג'] !== 'variation' && row['סוג'] !== 'simple') continue;
+          // Skip if not a product (accept variable, variation, simple)
+          const productType = row['סוג']?.toLowerCase();
+          if (!['variable', 'variation', 'simple'].includes(productType)) continue;
 
           const sku = row['מק"ט']?.trim();
           if (!sku) {
@@ -111,9 +115,11 @@ export class ImportService {
             }
           }
 
-          // Parse prices
-          const regularPrice = parseFloat(row['מחיר רגיל']?.replace(/[^\d.]/g, '') || '0');
-          const salePrice = parseFloat(row['מחיר מבצע']?.replace(/[^\d.]/g, '') || '0');
+          // Parse prices - default to 99 ILS if not specified
+          const regularPriceStr = row['מחיר רגיל']?.replace(/[^\d.]/g, '') || '';
+          const salePriceStr = row['מחיר מבצע']?.replace(/[^\d.]/g, '') || '';
+          const regularPrice = regularPriceStr ? parseFloat(regularPriceStr) : 99;
+          const salePrice = salePriceStr ? parseFloat(salePriceStr) : 0;
 
           // Parse images
           const imagesStr = row['תמונות'] || '';
@@ -127,9 +133,10 @@ export class ImportService {
           const tagsStr = row['תגיות'] || '';
           const tags = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
 
-          // Parse size from row or SKU
-          const sizeMatch = sku.match(/-([smlx]{1,2}|xl|xxl)$/i);
-          const size = row['שיוך 1 ערכים']?.trim() || (sizeMatch ? sizeMatch[1].toUpperCase() : 'M');
+          // Parse size from 'שיוך 1 ערכים' column or SKU
+          const sizeFromColumn = row['שיוך 1 ערכים']?.trim();
+          const sizeMatch = sku.match(/-([smlx]{1,3}|xl|xxl|2xl|3xl)$/i);
+          const size = sizeFromColumn || (sizeMatch ? sizeMatch[1].toUpperCase() : 'M');
 
           // Check if product already exists
           const existingProduct = await this.prisma.product.findUnique({
@@ -141,10 +148,14 @@ export class ImportService {
           const isForWomen = categoryPaths.some(p => p.includes('נשים'));
           const genderTag = isForMen && isForWomen ? 'unisex' : (isForMen ? 'men' : 'women');
 
+          // Clean up description - remove HTML tags
+          const rawDesc = row['תיאור']?.trim() || row['תיאור קצר']?.trim() || '';
+          const cleanDesc = rawDesc.replace(/<[^>]*>/g, '').trim();
+
           const productData = {
             nameHe: row['שם']?.trim() || 'ללא שם',
             nameEn: this.translateToEnglish(row['שם']?.trim() || 'No name'),
-            descHe: row['תיאור']?.trim() || '',
+            descHe: cleanDesc,
             descEn: '',
             priceUsd: Math.round(regularPrice / 3.7 * 100) / 100, // Convert ILS to USD
             priceIls: regularPrice,
@@ -153,8 +164,8 @@ export class ImportService {
             sizes: [size],
             colors: [],
             tags: [...tags, genderTag],
-            stock: parseInt(row['מלאי'] || '10', 10),
-            isActive: row['פורסם'] === '1',
+            stock: parseInt(row['מלאי'] || '10', 10) || 10,
+            isActive: row['פורסם'] === '1' || row['במלאי?'] === '1',
             isNew: false,
             isBestSeller: false,
             isFeatured: false,
@@ -283,12 +294,18 @@ export class ImportService {
       'חולצה': 'shirt',
       'חולצות': 'shirts',
       'מכנסיים': 'pants',
+      'מכנסי טרנינג': 'joggers',
+      'טרנינג': 'joggers',
       'שמלות': 'dresses',
       'חצאיות': 'skirts',
       'ז\'קטים': 'jackets',
       'סווטשירטים': 'sweatshirts',
+      'סווטשירט': 'sweatshirt',
       'הודיות': 'hoodies',
       'hoodie': 'hoodies',
+      'הודי': 'hoodie',
+      'מכנסיים קצרים': 'shorts',
+      'שורטס': 'shorts',
     };
 
     const slug = hebrewToSlug[name];
@@ -311,11 +328,17 @@ export class ImportService {
       'חולצה': 'Shirt',
       'חולצות': 'Shirts',
       'מכנסיים': 'Pants',
+      'מכנסי טרנינג': 'Joggers',
+      'טרנינג': 'Joggers',
       'שמלות': 'Dresses',
       'חצאיות': 'Skirts',
       'ז\'קטים': 'Jackets',
       'סווטשירטים': 'Sweatshirts',
+      'סווטשירט': 'Sweatshirt',
       'הודיות': 'Hoodies',
+      'הודי': 'Hoodie',
+      'מכנסיים קצרים': 'Shorts',
+      'שורטס': 'Shorts',
     };
 
     return translations[hebrew] || hebrew;

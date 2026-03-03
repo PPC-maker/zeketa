@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Query, Param, Body, HttpException, HttpStatus } from '@nestjs/common';
 import { ProductsService } from './products.service';
 
 @Controller('api/products')
@@ -54,6 +54,48 @@ export class CategoriesController {
   @Get('tree')
   async getCategoryTree() {
     return this.productsService.getCategoryTree();
+  }
+
+  @Post()
+  async createCategory(
+    @Body() body: {
+      nameHe: string;
+      nameEn: string;
+      slug: string;
+      parentId?: string | null;
+      image?: string;
+      sortOrder?: number;
+    },
+  ) {
+    return this.productsService.createCategory(body);
+  }
+
+  @Put(':id')
+  async updateCategory(
+    @Param('id') id: string,
+    @Body() body: {
+      nameHe?: string;
+      nameEn?: string;
+      slug?: string;
+      parentId?: string | null;
+      image?: string;
+      sortOrder?: number;
+      isActive?: boolean;
+    },
+  ) {
+    return this.productsService.updateCategory(id, body);
+  }
+
+  @Delete(':id')
+  async deleteCategory(@Param('id') id: string) {
+    try {
+      return await this.productsService.deleteCategory(id);
+    } catch (error) {
+      throw new HttpException(
+        error.message || 'Cannot delete category',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
   }
 }
 

@@ -1,0 +1,73 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: white-setting-457110-f2
+  REGION: me-west1
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker gcr.io
+
+      - name: Build and Push Backend
+        working-directory: ./backend
+        run: |
+          docker build -t gcr.io/${{ env.PROJECT_ID }}/zeketa-backend .
+          docker push gcr.io/${{ env.PROJECT_ID }}/zeketa-backend
+
+      - name: Deploy Backend to Cloud Run
+        run: |
+          gcloud run deploy zeketa-backend \
+            --image gcr.io/${{ env.PROJECT_ID }}/zeketa-backend \
+            --region ${{ env.REGION }} \
+            --allow-unauthenticated \
+            --set-env-vars "DATABASE_URL=${{ secrets.DATABASE_URL }},JWT_SECRET=${{ secrets.JWT_SECRET }}"
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker gcr.io
+
+      - name: Build and Push Frontend
+        working-directory: ./frontend
+        run: |
+          docker build -t gcr.io/${{ env.PROJECT_ID }}/zeketa-frontend .
+          docker push gcr.io/${{ env.PROJECT_ID }}/zeketa-frontend
+
+      - name: Deploy Frontend to Cloud Run
+        run: |
+          gcloud run deploy zeketa-frontend \
+            --image gcr.io/${{ env.PROJECT_ID }}/zeketa-frontend \
+            --region ${{ env.REGION }} \
+            --allow-unauthenticated
