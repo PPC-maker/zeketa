@@ -90,20 +90,20 @@ export class ImportService {
           const categoriesStr = row['קטגוריות'] || '';
           const categoryPaths = categoriesStr.split(',').map(c => c.trim()).filter(Boolean);
 
+          let mainCategory: { id: string } | null = null;
+          const mainCategoryPath = categoryPaths.length > 0 ? categoryPaths[0] : 'כללי';
+
           if (categoryPaths.length === 0) {
-            result.errors.push(`No categories for product: ${sku}`);
-            result.failed++;
-            continue;
-          }
+            // Use default category for products without category
+            mainCategory = await this.getOrCreateDefaultCategory();
+          } else {
+            // Get the most specific category (last in path)
+            mainCategory = await this.getCategoryByPath(mainCategoryPath);
 
-          // Get the most specific category (last in path)
-          const mainCategoryPath = categoryPaths[0];
-          const mainCategory = await this.getCategoryByPath(mainCategoryPath);
-
-          if (!mainCategory) {
-            result.errors.push(`Category not found for: ${sku}`);
-            result.failed++;
-            continue;
+            if (!mainCategory) {
+              // Fallback to default category if path not found
+              mainCategory = await this.getOrCreateDefaultCategory();
+            }
           }
 
           // Check limit per category
@@ -244,6 +244,30 @@ export class ImportService {
         parentSlug = baseSlug;
       }
     }
+  }
+
+  private async getOrCreateDefaultCategory(): Promise<{ id: string }> {
+    const defaultSlug = 'uncategorized';
+
+    let category = await this.prisma.category.findFirst({
+      where: { slug: defaultSlug },
+    });
+
+    if (!category) {
+      category = await this.prisma.category.create({
+        data: {
+          nameHe: 'כללי',
+          nameEn: 'General',
+          slug: defaultSlug,
+          parentId: null,
+          isActive: true,
+          sortOrder: 999,
+        },
+      });
+      this.logger.log('Created default category: כללי');
+    }
+
+    return { id: category.id };
   }
 
   private async getCategoryByPath(path: string): Promise<{ id: string } | null> {
