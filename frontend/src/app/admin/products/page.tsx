@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Search, Filter, Eye, Edit, Trash2, Star, TrendingUp } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 import { useStore } from '@/stores/useStore';
+import { getApiUrl } from '@/lib/config';
 
 interface Product {
   id: string;
@@ -29,8 +30,6 @@ interface Product {
   };
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
 export default function AdminProductsPage() {
   const { locale } = useStore();
   const isRTL = locale === 'he';
@@ -45,7 +44,7 @@ export default function AdminProductsPage() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/products?limit=100`);
+      const response = await fetch(`${getApiUrl()}/api/products?limit=100`);
       const data = await response.json();
       setProducts(data.products || []);
     } catch (error) {

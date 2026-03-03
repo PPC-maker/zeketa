@@ -235,4 +235,50 @@ export class AuthService {
 
     return user;
   }
+
+  async seedAdmin(dto: RegisterDto, secretKey: string) {
+    // Verify secret key for security
+    const validSecret = process.env.SEED_SECRET || 'zeketa-seed-2024';
+    if (secretKey !== validSecret) {
+      throw new UnauthorizedException('Invalid seed secret');
+    }
+
+    // Check if any admin exists
+    const existingAdmin = await this.prisma.user.findFirst({
+      where: { role: 'ADMIN' },
+    });
+
+    if (existingAdmin) {
+      throw new BadRequestException('Admin user already exists');
+    }
+
+    // Validate password
+    this.validatePassword(dto.password);
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(dto.password, 12);
+
+    // Create admin user
+    const user = await this.prisma.user.create({
+      data: {
+        email: dto.email.toLowerCase(),
+        passwordHash,
+        firstName: dto.firstName || 'Admin',
+        lastName: dto.lastName || 'User',
+        role: 'ADMIN',
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+
+    await this.logsService.info(`Initial admin user created: ${user.email}`, { userId: user.id });
+
+    return { message: 'Admin user created successfully', user };
+  }
 }

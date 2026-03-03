@@ -17,9 +17,10 @@ build/
 .env.*.local
 
 # Logs
-logs/
+/logs/
 *.log
 npm-debug.log*
+!**/src/modules/logs/
 
 # IDE
 .idea/

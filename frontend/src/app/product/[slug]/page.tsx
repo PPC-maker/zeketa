@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useStore } from '@/stores/useStore';
+import { getApiUrl } from '@/lib/config';
 // @ts-ignore
 import Swal from 'sweetalert2';
 
@@ -46,12 +47,33 @@ export default function ProductPage() {
     const fetchProduct = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/products/${slug}`);
+        const res = await fetch(`${getApiUrl()}/api/products/${slug}`);
         if (!res.ok) throw new Error('Product not found');
         const data = await res.json();
         setProduct(data);
         if (data.sizes?.length > 0) setSelectedSize(data.sizes[0]);
         if (data.colors?.length > 0) setSelectedColor(data.colors[0]);
+
+        // Save to recently viewed
+        const recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+        const productToSave = {
+          id: data.id,
+          sku: data.sku,
+          nameHe: data.name_he,
+          nameEn: data.name_en,
+          priceUsd: data.price_usd,
+          priceIls: data.price_ils,
+          salePrice: data.sale_price,
+          images: data.images,
+          viewedAt: Date.now()
+        };
+        // Remove if already exists
+        const filtered = recentlyViewed.filter((p: { sku: string }) => p.sku !== data.sku);
+        // Add to beginning
+        filtered.unshift(productToSave);
+        // Keep only last 10
+        const limited = filtered.slice(0, 10);
+        localStorage.setItem('recentlyViewed', JSON.stringify(limited));
       } catch (err) {
         setError(isRTL ? 'המוצר לא נמצא' : 'Product not found');
       } finally {

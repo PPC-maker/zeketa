@@ -21,8 +21,8 @@ RUN npx prisma generate
 # Copy source code
 COPY . .
 
-# Build
-RUN npm run build
+# Build using npx to ensure nest CLI is found
+RUN npx nest build
 
 # Expose port
 EXPOSE 4000

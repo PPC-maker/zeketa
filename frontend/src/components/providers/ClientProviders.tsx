@@ -27,7 +27,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
       })
   );
 
-  const { isLoading, setLoading } = useStore();
+  const { isLoading, setLoading, locale, _hasHydrated } = useStore();
   const [initialLoad, setInitialLoad] = useState(true);
 
   // Initial page load animation
@@ -37,6 +37,14 @@ export default function ClientProviders({ children }: { children: React.ReactNod
     }, isAdminPage ? 500 : 1500);
     return () => clearTimeout(timer);
   }, [isAdminPage]);
+
+  // Sync document direction with locale
+  useEffect(() => {
+    if (_hasHydrated) {
+      document.documentElement.dir = locale === 'he' ? 'rtl' : 'ltr';
+      document.documentElement.lang = locale;
+    }
+  }, [locale, _hasHydrated]);
 
   // Handle route change loading
   useEffect(() => {

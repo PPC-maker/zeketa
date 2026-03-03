@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useStore } from '@/stores/useStore';
+import { getApiUrl } from '@/lib/config';
 
 interface Product {
   id: string;
@@ -19,20 +20,31 @@ interface Product {
   isBestSeller: boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
+interface RecentlyViewedProduct {
+  id: string;
+  sku: string;
+  nameHe: string;
+  nameEn: string;
+  priceUsd: number;
+  priceIls: number;
+  salePrice?: number | null;
+  images: string[];
+  viewedAt: number;
+}
 
 export default function BestSellersPage() {
   const { locale, currency } = useStore();
   const isRTL = locale === 'he';
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<RecentlyViewedProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${API_URL}/api/products/best-sellers`);
+        const response = await fetch(`${getApiUrl()}/api/products/best-sellers`);
         const data = await response.json();
         setProducts(data.products || []);
       } catch (error) {
@@ -44,6 +56,17 @@ export default function BestSellersPage() {
     };
 
     fetchProducts();
+
+    // Load recently viewed from localStorage
+    const saved = localStorage.getItem('recentlyViewed');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setRecentlyViewed(parsed.slice(0, 10));
+      } catch {
+        setRecentlyViewed([]);
+      }
+    }
   }, []);
 
   return (
@@ -80,7 +103,7 @@ export default function BestSellersPage() {
             ))}
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-20">
+          <div className="text-center py-12">
             <p className="text-xl text-gray-500">
               {isRTL ? 'אין מוצרים נמכרים כרגע' : 'No best sellers at the moment'}
             </p>
@@ -119,6 +142,44 @@ export default function BestSellersPage() {
                 </Link>
               </motion.div>
             ))}
+          </div>
+        )}
+
+        {/* Recently Viewed Section */}
+        {recentlyViewed.length > 0 && (
+          <div className="mt-16 border-t pt-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">
+              {isRTL ? 'צפית לאחרונה' : 'Recently Viewed'}
+            </h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+              {recentlyViewed.map((product: RecentlyViewedProduct, index: number) => (
+                <motion.div
+                  key={product.sku}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(index * 0.05, 0.5) }}
+                >
+                  <Link href={`/product/${product.sku}`}>
+                    <div className="group">
+                      <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden mb-3">
+                        <Image
+                          src={product.images?.[0] || '/images/placeholder.jpg'}
+                          alt={isRTL ? product.nameHe : product.nameEn}
+                          fill
+                          className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      </div>
+                      <h3 className="font-medium text-gray-900 text-sm mb-1 group-hover:text-cyan-600 transition-colors line-clamp-2">
+                        {isRTL ? product.nameHe : product.nameEn}
+                      </h3>
+                      <p className="text-gray-900 font-bold text-sm">
+                        {currency === 'ILS' ? `₪${product.priceIls}` : `$${product.priceUsd}`}
+                      </p>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
           </div>
         )}
       </div>

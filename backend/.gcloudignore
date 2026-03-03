@@ -1,0 +1,30 @@
+# Ignore node_modules - they get installed during Docker build
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Log files only (not src/modules/logs/)
+*.log
+
+# Test files
+**/*.spec.ts
+**/*.test.ts
+test/
+coverage/
+
+# Development
+.env.local
+.env.development
+docker-compose*.yml
+
+# Documentation
+*.md
+!README.md

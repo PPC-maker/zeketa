@@ -19,6 +19,7 @@ import {
   X,
   Bell,
   Search,
+  Globe,
 } from 'lucide-react';
 import { useStore } from '@/stores/useStore';
 
@@ -46,7 +47,7 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { locale } = useStore();
+  const { locale, setLocale } = useStore();
   const pathname = usePathname();
   const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -257,6 +258,15 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {/* Language Switcher */}
+            <button
+              onClick={() => setLocale(locale === 'he' ? 'en' : 'he')}
+              className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              title={isRTL ? 'החלף שפה' : 'Switch Language'}
+            >
+              <Globe size={18} />
+              <span className="text-sm font-medium">{locale === 'he' ? 'EN' : 'עב'}</span>
+            </button>
             <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
               <Bell size={20} />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />

@@ -6,6 +6,7 @@ import { useRef, useState, useEffect } from 'react';
 import { useStore } from '@/stores/useStore';
 import ProductCard from '@/components/ui/ProductCard';
 import Link from 'next/link';
+import { getApiUrl } from '@/lib/config';
 
 interface Product {
   id: string;
@@ -20,8 +21,6 @@ interface Product {
   isBestSeller?: boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
 export default function BestSellers() {
   const { locale } = useStore();
   const [products, setProducts] = useState<Product[]>([]);
@@ -34,7 +33,7 @@ export default function BestSellers() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/products/best-sellers?limit=10`);
+        const response = await fetch(`${getApiUrl()}/api/products/best-sellers?limit=10`);
         const data = await response.json();
         if (data.products && data.products.length > 0) {
           setProducts(data.products);

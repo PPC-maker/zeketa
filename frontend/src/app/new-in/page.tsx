@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useStore } from '@/stores/useStore';
+import { getApiUrl } from '@/lib/config';
 
 interface Product {
   id: string;
@@ -19,8 +20,6 @@ interface Product {
   isBestSeller: boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
 export default function NewInPage() {
   const { locale, currency } = useStore();
   const isRTL = locale === 'he';
@@ -32,7 +31,7 @@ export default function NewInPage() {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${API_URL}/api/products/new`);
+        const response = await fetch(`${getApiUrl()}/api/products/new`);
         const data = await response.json();
         setProducts(data.products || []);
       } catch (error) {

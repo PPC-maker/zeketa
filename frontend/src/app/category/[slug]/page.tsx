@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useStore } from '@/stores/useStore';
+import { getApiUrl } from '@/lib/config';
 
 interface Product {
   id: string;
@@ -35,8 +36,6 @@ const categoryData: Record<string, Category> = {
   'tank-top': { id: 'tank-top', nameHe: 'גופיות', nameEn: 'Tank Tops', slug: 'tank-top', image: '/images/categories/tank-top.jpg' },
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-
 const subcategoryLabels: Record<string, { he: string; en: string }> = {
   'tank-top': { he: 'גופיות', en: 'Tank Tops' },
   'shirts': { he: 'חולצות', en: 'Shirts' },
@@ -65,8 +64,8 @@ export default function CategoryPage() {
       setLoading(true);
       try {
         const url = type
-          ? `${API_URL}/api/products/category/${slug}?type=${type}`
-          : `${API_URL}/api/products/category/${slug}`;
+          ? `${getApiUrl()}/api/products/category/${slug}?type=${type}`
+          : `${getApiUrl()}/api/products/category/${slug}`;
         const response = await fetch(url);
         const data = await response.json();
         setProducts(data.products || []);

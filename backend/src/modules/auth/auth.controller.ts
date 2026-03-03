@@ -83,4 +83,13 @@ export class AuthController {
   async verifyToken(@Request() req: any) {
     return { valid: true, user: req.user };
   }
+
+  @Post('seed-admin')
+  @HttpCode(HttpStatus.OK)
+  async seedAdmin(@Body() body: { email: string; password: string; firstName?: string; lastName?: string; secretKey: string }) {
+    return this.authService.seedAdmin(
+      { email: body.email, password: body.password, firstName: body.firstName, lastName: body.lastName },
+      body.secretKey
+    );
+  }
 }

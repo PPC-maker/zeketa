@@ -43,6 +43,10 @@ interface StoreState {
   setMenuOpen: (open: boolean) => void;
   isLoading: boolean;
   setLoading: (loading: boolean) => void;
+
+  // Hydration
+  _hasHydrated: boolean;
+  setHasHydrated: (state: boolean) => void;
 }
 
 export const useStore = create<StoreState>()(
@@ -113,6 +117,10 @@ export const useStore = create<StoreState>()(
       setMenuOpen: (open) => set({ isMenuOpen: open }),
       isLoading: false,
       setLoading: (loading) => set({ isLoading: loading }),
+
+      // Hydration
+      _hasHydrated: false,
+      setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
       name: 'zeketa-store',
@@ -121,6 +129,9 @@ export const useStore = create<StoreState>()(
         currency: state.currency,
         locale: state.locale,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );
