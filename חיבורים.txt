@@ -1,0 +1,34 @@
+אתר חנות ZEKETA
+
+חיבור לפנל ניהול של החנות 
+אימייל: 
+admin@zeketa.com
+סיסמה: 
+ZeketaAdmin2024!
+------------------------------------
+
+חיבור מערכת ל
+GOOGLE CLOUDE
+קישור:
+https://console.cloud.google.com/run/deploy/me-west1/zeketa-backend?project=white-setting-457110-f2
+
+כולל DB
+עם DOCKER
+כרטיס אשראי וחשבון של חן
+
+חשבון גוגל
+PPC@newpost.co.il
+
+------------------------------
+
+
+
+הנה הגיט של החשבון
+תחת אותו חשבון גוגל
+https://github.com/PPC-maker/zeketa
+
+
+
+
+
+

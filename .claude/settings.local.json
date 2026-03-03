@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(DATABASE_URL=\"postgresql://postgres:ZeketaDB2024Secure!@34.165.118.161:5432/zeketa_store\" npx prisma db push:*)"
+    ]
+  }
+}
