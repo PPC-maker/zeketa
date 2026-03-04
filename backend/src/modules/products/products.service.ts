@@ -137,24 +137,56 @@ export class ProductsService {
   }
 
   async getCategoryTree() {
-    // Return full category tree for navigation
-    return this.prisma.category.findMany({
+    // Return full category tree for navigation with product counts
+    const categories = await this.prisma.category.findMany({
       where: {
         isActive: true,
         parentId: null,
       },
       include: {
+        _count: {
+          select: { products: true },
+        },
         children: {
           where: { isActive: true },
           include: {
+            _count: {
+              select: { products: true },
+            },
             children: {
               where: { isActive: true },
+              include: {
+                _count: {
+                  select: { products: true },
+                },
+              },
             },
           },
         },
       },
       orderBy: { sortOrder: 'asc' },
     });
+
+    // Helper to calculate total products including children
+    const calculateTotalProducts = (cat: any): number => {
+      let total = cat._count?.products || 0;
+      if (cat.children) {
+        for (const child of cat.children) {
+          total += calculateTotalProducts(child);
+        }
+      }
+      return total;
+    };
+
+    // Add totalProducts to each category
+    const addTotalProducts = (cat: any): any => ({
+      ...cat,
+      productCount: cat._count?.products || 0,
+      totalProducts: calculateTotalProducts(cat),
+      children: cat.children?.map(addTotalProducts) || [],
+    });
+
+    return categories.map(addTotalProducts);
   }
 
   async createCategory(data: {

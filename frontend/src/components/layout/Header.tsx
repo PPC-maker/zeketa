@@ -8,41 +8,76 @@ import { Search, ShoppingBag, User, Menu, X, ChevronDown } from 'lucide-react';
 import { useStore } from '@/stores/useStore';
 import { cn } from '@/lib/utils';
 
-const navItems = [
-  {
-    href: '/category/men',
-    label: 'Men',
-    labelHe: 'גברים',
-    submenu: [
-      { href: '/category/men', label: 'All Men', labelHe: 'כל הבגדים' },
-      { href: '/category/men?type=tank-top', label: 'Tank Tops', labelHe: 'גופיות' },
-      { href: '/category/men?type=shirts', label: 'Shirts', labelHe: 'חולצות' },
-      { href: '/category/men?type=hoodies', label: 'Hoodies', labelHe: 'הודיות' },
-      { href: '/category/men?type=pants', label: 'Pants', labelHe: 'מכנסיים' },
-    ],
-  },
-  {
-    href: '/category/women',
-    label: 'Women',
-    labelHe: 'נשים',
-    submenu: [
-      { href: '/category/women', label: 'All Women', labelHe: 'כל הבגדים' },
-      { href: '/category/women?type=tank-top', label: 'Tank Tops', labelHe: 'גופיות' },
-      { href: '/category/women?type=shirts', label: 'Shirts', labelHe: 'חולצות' },
-      { href: '/category/women?type=hoodies', label: 'Hoodies', labelHe: 'הודיות' },
-      { href: '/category/women?type=dresses', label: 'Dresses', labelHe: 'שמלות' },
-    ],
-  },
+interface Category {
+  id: string;
+  slug: string;
+  nameHe: string;
+  nameEn: string;
+  totalProducts: number;
+  children?: Category[];
+}
+
+interface NavItem {
+  href: string;
+  label: string;
+  labelHe: string;
+  submenu?: { href: string; label: string; labelHe: string }[];
+}
+
+// Static nav items (non-category pages)
+const staticNavItems: NavItem[] = [
   { href: '/best-sellers', label: 'Best Sellers', labelHe: 'הנמכרים ביותר' },
   { href: '/new-in', label: 'New In', labelHe: 'חדש באתר' },
   { href: '/contact', label: 'Contact', labelHe: 'צור קשר' },
 ];
 
 export default function Header() {
+  const [dynamicNavItems, setDynamicNavItems] = useState<NavItem[]>([]);
   const { locale, setLocale, currency, setCurrency, setCartOpen, setSearchOpen, getCartCount, isMenuOpen, setMenuOpen } = useStore();
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
+
+  // Fetch categories from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://zeketa-backend-280659436731.me-west1.run.app';
+        const response = await fetch(`${apiUrl}/api/categories/tree`);
+        if (!response.ok) return;
+
+        const categories: Category[] = await response.json();
+
+        // Build nav items from categories - only show categories with products
+        const categoryNavItems: NavItem[] = categories
+          .filter(cat => cat.totalProducts > 0) // Only show parent categories that have products
+          .map(cat => {
+            // Filter children that have products
+            const childrenWithProducts = (cat.children || []).filter(child => child.totalProducts > 0);
+
+            return {
+              href: `/category/${cat.slug}`,
+              label: cat.nameEn,
+              labelHe: cat.nameHe,
+              submenu: childrenWithProducts.length > 0 ? [
+                { href: `/category/${cat.slug}`, label: `All ${cat.nameEn}`, labelHe: 'כל הבגדים' },
+                ...childrenWithProducts.map(child => ({
+                  href: `/category/${cat.slug}?type=${child.slug.replace(`${cat.slug}-`, '')}`,
+                  label: child.nameEn,
+                  labelHe: child.nameHe,
+                })),
+              ] : undefined,
+            };
+          });
+
+        setDynamicNavItems(categoryNavItems);
+      } catch (error) {
+        console.error('Failed to fetch categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -121,7 +156,7 @@ export default function Header() {
 
             {/* Desktop Navigation */}
             <nav className="hidden lg:flex items-center gap-1">
-              {navItems.map((item) => (
+              {[...dynamicNavItems, ...staticNavItems].map((item) => (
                 <div
                   key={item.href}
                   className="relative group"
@@ -256,7 +291,7 @@ export default function Header() {
             dir={isRTL ? 'rtl' : 'ltr'}
           >
             <div className="pt-20 px-6 pb-6 h-full overflow-y-auto">
-              {navItems.map((item, index) => (
+              {[...dynamicNavItems, ...staticNavItems].map((item, index) => (
                 <motion.div
                   key={item.href}
                   initial={{ opacity: 0, y: 20 }}
