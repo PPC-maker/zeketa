@@ -330,6 +330,10 @@ export class ImportService {
       'הודי': 'hoodie',
       'מכנסיים קצרים': 'shorts',
       'שורטס': 'shorts',
+      'קפוצ\'ון': 'hoodie',
+      'קפוצון': 'hoodie',
+      'קפוצ\'ון עם רוכסן': 'zip-hoodie',
+      'קפוצון עם רוכסן': 'zip-hoodie',
     };
 
     const slug = hebrewToSlug[name];
@@ -363,6 +367,10 @@ export class ImportService {
       'הודי': 'Hoodie',
       'מכנסיים קצרים': 'Shorts',
       'שורטס': 'Shorts',
+      'קפוצ\'ון': 'Hoodie',
+      'קפוצון': 'Hoodie',
+      'קפוצ\'ון עם רוכסן': 'Zip-Up Hoodie',
+      'קפוצון עם רוכסן': 'Zip-Up Hoodie',
     };
 
     return translations[hebrew] || hebrew;
